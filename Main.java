@@ -1,13 +1,12 @@
-package id.kasir.ui;
-
-import id.kasir.model.Product;
-import id.kasir.model.SaleTransaction;
-import id.kasir.model.ShoppingCart;
-import id.kasir.model.TransactionItem;
-import id.kasir.repository.ProductRepository;
-import id.kasir.repository.TransactionRepository;
-import id.kasir.service.ProductService;
-import id.kasir.service.TransactionService;
+import model.Product;
+import model.SaleTransaction;
+import model.ShoppingCart;
+import model.TransactionItem;
+import repo.ProductRepository;
+import repo.TransactionRepository;
+import service.ProductService;
+import service.TransactionService;
+import ui.ReceiptPrinter;
 
 import java.io.IOException;
 import java.nio.file.Path;

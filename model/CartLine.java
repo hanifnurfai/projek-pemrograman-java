@@ -1,4 +1,4 @@
-package id.kasir.model;
+package model;
 
 public record CartLine(String productCode, int quantity) {
     public CartLine {

@@ -9,15 +9,15 @@ Panduan pembagian tanggung jawab dan kolaborasi tersedia di [AGENTS.MD](./AGENTS
 Gunakan Java 17 atau lebih baru. Dari direktori proyek, kompilasi dan jalankan:
 
 ```powershell
-javac -d out (Get-ChildItem -Recurse src\main\java\*.java | ForEach-Object { $_.FullName })
-java -cp out id.kasir.ui.Main
+javac -encoding UTF-8 -d out Main.java (Get-ChildItem -Recurse model,repo,service,ui -Filter *.java | ForEach-Object { $_.FullName })
+java -cp out Main
 ```
 
 Secara default, data disimpan di `data\products.csv` dan `data\transactions.csv`. Argumen pertama mengatur file produk, argumen kedua (opsional) mengatur file transaksi:
 
 ```powershell
-java -cp out id.kasir.ui.Main C:\lokasi\data-produk.csv
-java -cp out id.kasir.ui.Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
+java -cp out Main C:\lokasi\data-produk.csv
+java -cp out Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
 ```
 
 ## Fitur
@@ -32,12 +32,14 @@ java -cp out id.kasir.ui.Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
 
 ## Struktur kode
 
-Kode sumber berada di `src/main/java/id/kasir` dan dipisahkan berdasarkan tanggung jawab:
+Kode sumber berada langsung di folder proyek dan dipisahkan berdasarkan tanggung jawab:
 
 - `model`: produk, keranjang, item transaksi, dan transaksi penjualan.
-- `repository`: penyimpanan serta pemuatan data CSV.
+- `repo`: penyimpanan serta pemuatan data CSV.
 - `service`: aturan bisnis produk, stok, checkout, dan riwayat transaksi.
-- `ui`: menu CLI dan pencetak struk.
+- `ui`: pencetak struk.
+
+`Main.java` di folder proyek adalah satu-satunya entry point sekaligus menu CLI. Kelas lain menggunakan paket `model`, `repo`, `service`, dan `ui`.
 
 ## Penggunaan
 
@@ -49,7 +51,7 @@ Data produk disimpan dalam CSV UTF-8 dengan kolom `kode,nama,harga,stok`. Riwaya
 
 ## Integrasi checkout
 
-`ProductService` di paket `id.kasir.service` menyediakan kontrak untuk integrasi transaksi:
+`ProductService` di paket `service` menyediakan kontrak untuk integrasi transaksi:
 
 - `getAll()` mengembalikan daftar produk.
 - `findByCode(code)` mengambil produk beserta harga dan stok saat ini.

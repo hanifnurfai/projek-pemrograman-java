@@ -1,4 +1,4 @@
-package id.kasir.model;
+package model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
