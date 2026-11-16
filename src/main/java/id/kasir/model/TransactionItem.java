@@ -1,4 +1,4 @@
-package id.kasir;
+package id.kasir.model;
 
 public record TransactionItem(String productCode, String productName, long unitPrice, int quantity) {
     public TransactionItem {

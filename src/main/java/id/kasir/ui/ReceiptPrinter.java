@@ -1,4 +1,7 @@
-package id.kasir;
+package id.kasir.ui;
+
+import id.kasir.model.SaleTransaction;
+import id.kasir.model.TransactionItem;
 
 import java.text.NumberFormat;
 import java.time.ZoneId;

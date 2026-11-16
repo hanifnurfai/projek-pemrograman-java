@@ -1,4 +1,4 @@
-package id.kasir;
+package id.kasir.model;
 
 import java.time.Instant;
 import java.util.List;

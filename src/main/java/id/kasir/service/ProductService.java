@@ -1,4 +1,7 @@
-package id.kasir;
+package id.kasir.service;
+
+import id.kasir.model.Product;
+import id.kasir.repository.ProductRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;

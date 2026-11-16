@@ -1,4 +1,6 @@
-package id.kasir;
+package id.kasir.repository;
+
+import id.kasir.model.Product;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

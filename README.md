@@ -10,14 +10,14 @@ Gunakan Java 17 atau lebih baru. Dari direktori proyek, kompilasi dan jalankan:
 
 ```powershell
 javac -d out (Get-ChildItem -Recurse src\main\java\*.java | ForEach-Object { $_.FullName })
-java -cp out id.kasir.Main
+java -cp out id.kasir.ui.Main
 ```
 
 Secara default, data disimpan di `data\products.csv` dan `data\transactions.csv`. Argumen pertama mengatur file produk, argumen kedua (opsional) mengatur file transaksi:
 
 ```powershell
-java -cp out id.kasir.Main C:\lokasi\data-produk.csv
-java -cp out id.kasir.Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
+java -cp out id.kasir.ui.Main C:\lokasi\data-produk.csv
+java -cp out id.kasir.ui.Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
 ```
 
 ## Fitur
@@ -30,6 +30,15 @@ java -cp out id.kasir.Main C:\lokasi\data-produk.csv C:\lokasi\transaksi.csv
 - Melihat riwayat transaksi dan total penjualan.
 - Harga menggunakan rupiah bilangan bulat; stok awal dapat bernilai nol.
 
+## Struktur kode
+
+Kode sumber berada di `src/main/java/id/kasir` dan dipisahkan berdasarkan tanggung jawab:
+
+- `model`: produk, keranjang, item transaksi, dan transaksi penjualan.
+- `repository`: penyimpanan serta pemuatan data CSV.
+- `service`: aturan bisnis produk, stok, checkout, dan riwayat transaksi.
+- `ui`: menu CLI dan pencetak struk.
+
 ## Penggunaan
 
 Menu utama menyediakan submenu **Kelola produk** untuk melihat, menambah, mengubah, dan menghapus produk; **Kelola stok** untuk melihat stok dan mencatat stok masuk atau keluar; serta **Transaksi penjualan** untuk mengelola keranjang dan checkout tunai. Pembayaran yang kurang tidak mengubah stok atau menyimpan transaksi. Menu **Riwayat transaksi** menampilkan ringkasan penjualan dan dapat mencetak ulang struk berdasarkan ID transaksi.
@@ -40,7 +49,7 @@ Data produk disimpan dalam CSV UTF-8 dengan kolom `kode,nama,harga,stok`. Riwaya
 
 ## Integrasi checkout
 
-`ProductService` di paket `id.kasir` menyediakan kontrak untuk integrasi transaksi:
+`ProductService` di paket `id.kasir.service` menyediakan kontrak untuk integrasi transaksi:
 
 - `getAll()` mengembalikan daftar produk.
 - `findByCode(code)` mengambil produk beserta harga dan stok saat ini.

@@ -1,4 +1,7 @@
-package id.kasir;
+package id.kasir.repository;
+
+import id.kasir.model.SaleTransaction;
+import id.kasir.model.TransactionItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
