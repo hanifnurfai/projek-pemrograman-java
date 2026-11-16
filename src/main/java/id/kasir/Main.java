@@ -2,25 +2,32 @@ package id.kasir;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 public final class Main {
     private final ProductService productService;
+    private final TransactionService transactionService;
     private final Scanner scanner;
 
-    private Main(ProductService productService, Scanner scanner) {
+    private Main(ProductService productService, TransactionService transactionService, Scanner scanner) {
         this.productService = productService;
+        this.transactionService = transactionService;
         this.scanner = scanner;
     }
 
     public static void main(String[] args) {
         Path dataFile = args.length == 0 ? Path.of("data", "products.csv") : Path.of(args[0]);
+        Path transactionFile = args.length < 2 ? Path.of("data", "transactions.csv") : Path.of(args[1]);
         try (Scanner scanner = new Scanner(System.in)) {
             ProductService productService = new ProductService(new ProductRepository(dataFile));
-            new Main(productService, scanner).run();
+            TransactionService transactionService =
+                    new TransactionService(productService, new TransactionRepository(transactionFile));
+            new Main(productService, transactionService, scanner).run();
         } catch (IOException exception) {
-            System.err.println("Gagal memuat atau menyimpan data produk: " + exception.getMessage());
+            System.err.println("Gagal memuat atau menyimpan data aplikasi: " + exception.getMessage());
         }
     }
 
@@ -30,11 +37,15 @@ public final class Main {
             System.out.println("\n=== Aplikasi Kasir ===");
             System.out.println("1. Kelola produk");
             System.out.println("2. Kelola stok");
+            System.out.println("3. Transaksi penjualan");
+            System.out.println("4. Riwayat transaksi");
             System.out.println("0. Keluar");
             int choice = readInt("Pilih menu: ");
             switch (choice) {
                 case 1 -> productMenu();
                 case 2 -> stockMenu();
+                case 3 -> transactionMenu();
+                case 4 -> showTransactionHistory();
                 case 0 -> running = false;
                 default -> System.out.println("Pilihan menu tidak tersedia.");
             }
@@ -121,6 +132,123 @@ public final class Main {
             runOperation(() -> productService.increaseStock(code, quantity), "Stok berhasil ditambahkan.");
         } else {
             runOperation(() -> productService.decreaseStock(code, quantity), "Stok berhasil dikurangi.");
+        }
+    }
+
+    private void transactionMenu() throws IOException {
+        ShoppingCart cart = new ShoppingCart();
+        boolean inMenu = true;
+        while (inMenu) {
+            System.out.println("\n=== Transaksi Penjualan ===");
+            System.out.println("1. Tambah produk ke keranjang");
+            System.out.println("2. Lihat keranjang");
+            System.out.println("3. Hapus produk dari keranjang");
+            System.out.println("4. Bayar dan cetak struk");
+            System.out.println("0. Batalkan transaksi");
+            switch (readInt("Pilih menu: ")) {
+                case 1 -> addToCart(cart);
+                case 2 -> showCart(cart);
+                case 3 -> removeFromCart(cart);
+                case 4 -> {
+                    if (checkout(cart)) {
+                        inMenu = false;
+                    }
+                }
+                case 0 -> inMenu = false;
+                default -> System.out.println("Pilihan menu tidak tersedia.");
+            }
+        }
+    }
+
+    private void addToCart(ShoppingCart cart) {
+        try {
+            Product product = productService.findByCode(readText("Kode produk: "));
+            cart.add(product, readInt("Jumlah: "));
+            System.out.println("Produk berhasil ditambahkan ke keranjang.");
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Gagal: " + exception.getMessage());
+        }
+    }
+
+    private void showCart(ShoppingCart cart) {
+        try {
+            List<TransactionItem> items = transactionService.preview(cart);
+            long total = 0;
+            System.out.printf("%-12s %-28s %8s %15s %15s%n",
+                    "Kode", "Nama", "Jumlah", "Harga (Rp)", "Subtotal (Rp)");
+            for (TransactionItem item : items) {
+                System.out.printf("%-12s %-28s %8d %15d %15d%n",
+                        item.productCode(), item.productName(), item.quantity(), item.unitPrice(), item.subtotal());
+                total = Math.addExact(total, item.subtotal());
+            }
+            System.out.println("Total: Rp " + NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(total));
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Gagal menampilkan keranjang: " + exception.getMessage());
+        }
+    }
+
+    private void removeFromCart(ShoppingCart cart) {
+        try {
+            cart.remove(readText("Kode produk yang dihapus: "));
+            System.out.println("Produk berhasil dihapus dari keranjang.");
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Gagal: " + exception.getMessage());
+        }
+    }
+
+    private boolean checkout(ShoppingCart cart) throws IOException {
+        List<TransactionItem> items;
+        try {
+            items = transactionService.preview(cart);
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Gagal: " + exception.getMessage());
+            return false;
+        }
+        long total = 0;
+        try {
+            for (TransactionItem item : items) {
+                total = Math.addExact(total, item.subtotal());
+            }
+        } catch (ArithmeticException exception) {
+            System.out.println("Gagal: total transaksi melebihi batas maksimum.");
+            return false;
+        }
+
+        System.out.println("Total pembayaran: Rp "
+                + NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(total));
+        long amountPaid = readLong("Uang tunai: Rp ");
+        try {
+            SaleTransaction transaction = transactionService.checkout(cart, amountPaid);
+            System.out.println(new ReceiptPrinter().format(transaction));
+            return true;
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Checkout gagal: " + exception.getMessage());
+            return false;
+        }
+    }
+
+    private void showTransactionHistory() {
+        List<SaleTransaction> history = transactionService.getHistory();
+        if (history.isEmpty()) {
+            System.out.println("Belum ada transaksi.");
+            return;
+        }
+        System.out.println("\n=== Riwayat Transaksi ===");
+        System.out.printf("%-38s %-24s %15s%n", "ID", "Waktu (UTC)", "Total (Rp)");
+        for (SaleTransaction transaction : history) {
+            System.out.printf("%-38s %-24s %15d%n",
+                    transaction.id(), transaction.createdAt(), transaction.total());
+        }
+        System.out.println("Jumlah transaksi: " + history.size());
+        System.out.println("Total penjualan: Rp "
+                + NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID")).format(transactionService.totalSales()));
+        String transactionId = readText("Masukkan ID transaksi untuk cetak ulang struk (kosong untuk kembali): ");
+        if (!transactionId.isEmpty()) {
+            try {
+                System.out.println(new ReceiptPrinter().format(transactionService.findById(transactionId)));
+            } catch (IllegalArgumentException exception) {
+                System.out.println("Gagal: " + exception.getMessage());
+            }
         }
     }
 
